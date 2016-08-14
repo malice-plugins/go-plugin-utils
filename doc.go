@@ -1,4 +1,4 @@
 /*
-Package maliceutils provides libraries to implement malice golang based plugins.
+Package pluginutils provides libraries to implement malice golang based plugins.
 */
-package maliceutils
+package pluginutils

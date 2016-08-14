@@ -5,3 +5,5 @@ go-plugin-utils
 [![GoDoc](https://godoc.org/github.com/maliceio/go-plugin-utils?status.svg)](https://godoc.org/github.com/maliceio/go-plugin-utils)
 
 Malice Golang Plugin Utilities
+
+[license]: https://img.shields.io/badge/licence-Apache%202.0-blue.svg
