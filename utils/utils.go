@@ -11,6 +11,8 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
+// Getopt reads environment variables.
+// If not found will return a supplied default value
 func Getopt(name, dfault string) string {
 	value := os.Getenv(name)
 	if value == "" {
@@ -19,6 +21,7 @@ func Getopt(name, dfault string) string {
 	return value
 }
 
+// Assert asserts there was no error, else log.Fatal
 func Assert(err error) {
 	if err != nil {
 		log.Fatal(err)

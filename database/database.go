@@ -5,16 +5,26 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	_ "github.com/maliceio/go-plugin-utils/utils"
+	"github.com/maliceio/go-plugin-utils/utils"
 	r "gopkg.in/dancannon/gorethink.v2"
 )
 
-// writeToDatabase upserts plugin results into Database
-func writeToDatabase(results pluginResults) {
+var (
+	name     string
+	category string
+)
+
+type pluginResults struct {
+	ID   string `json:"id" gorethink:"id,omitempty"`
+	Data map[string]interface{}
+}
+
+// WriteToDatabase upserts plugin results into Database
+func WriteToDatabase(results pluginResults) {
 
 	// connect to RethinkDB
 	session, err := r.Connect(r.ConnectOpts{
-		Address:  fmt.Sprintf("%s:28015", Getopt("MALICE_RETHINKDB", "rethink")),
+		Address:  fmt.Sprintf("%s:28015", utils.Getopt("MALICE_RETHINKDB", "rethink")),
 		Timeout:  5 * time.Second,
 		Database: "malice",
 	})
@@ -25,13 +35,13 @@ func writeToDatabase(results pluginResults) {
 	defer session.Close()
 
 	res, err := r.Table("samples").Get(results.ID).Run(session)
-	Assert(err)
+	utils.Assert(err)
 	defer res.Close()
 
 	if res.IsNil() {
 		// upsert into RethinkDB
 		resp, err := r.Table("samples").Insert(results, r.InsertOpts{Conflict: "replace"}).RunWrite(session)
-		Assert(err)
+		utils.Assert(err)
 		log.Debug(resp)
 	} else {
 		resp, err := r.Table("samples").Get(results.ID).Update(map[string]interface{}{
@@ -41,7 +51,7 @@ func writeToDatabase(results pluginResults) {
 				},
 			},
 		}).RunWrite(session)
-		Assert(err)
+		utils.Assert(err)
 
 		log.Debug(resp)
 	}
