@@ -14,13 +14,13 @@ var (
 	category string
 )
 
-type pluginResults struct {
+type PluginResults struct {
 	ID   string `json:"id" gorethink:"id,omitempty"`
 	Data map[string]interface{}
 }
 
 // WriteToDatabase upserts plugin results into Database
-func WriteToDatabase(results pluginResults) {
+func WriteToDatabase(results map[string]interface{}) {
 
 	// connect to RethinkDB
 	session, err := r.Connect(r.ConnectOpts{
@@ -34,7 +34,7 @@ func WriteToDatabase(results pluginResults) {
 	}
 	defer session.Close()
 
-	res, err := r.Table("samples").Get(results.ID).Run(session)
+	res, err := r.Table("samples").Get(results["ID"]).Run(session)
 	utils.Assert(err)
 	defer res.Close()
 
@@ -44,10 +44,10 @@ func WriteToDatabase(results pluginResults) {
 		utils.Assert(err)
 		log.Debug(resp)
 	} else {
-		resp, err := r.Table("samples").Get(results.ID).Update(map[string]interface{}{
+		resp, err := r.Table("samples").Get(results["ID"]).Update(map[string]interface{}{
 			"plugins": map[string]interface{}{
 				category: map[string]interface{}{
-					name: results.Data,
+					name: results["Data"],
 				},
 			},
 		}).RunWrite(session)
