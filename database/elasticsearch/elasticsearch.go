@@ -35,6 +35,7 @@ func InitElasticSearch() error {
 
 	if !exists {
 		// Index does not exist yet.
+		log.Debug("Mapping: ", mapping)
 		createIndex, err := client.CreateIndex("malice").BodyString(mapping).Do()
 		utils.Assert(err)
 		if !createIndex.Acknowledged {
@@ -86,7 +87,7 @@ func TestConnection(addr string) error {
 
 // WritePluginResultsToDatabase upserts plugin results into Database
 func WritePluginResultsToDatabase(results PluginResults) {
-
+	// log.Info(results)
 	// scanID := utils.Getopt("MALICE_SCANID", "")
 	if ElasticAddr == "" {
 		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
@@ -100,12 +101,7 @@ func WritePluginResultsToDatabase(results PluginResults) {
 		Type("samples").
 		Id(results.ID).
 		Do()
-
-	fmt.Println(getSample)
-	fmt.Println(err)
-	if err != nil {
-
-	}
+	// utils.Assert(err)
 
 	if getSample != nil && getSample.Found {
 		fmt.Printf("Got document %s in version %d from index %s, type %s\n", getSample.Id, getSample.Version, getSample.Index, getSample.Type)
