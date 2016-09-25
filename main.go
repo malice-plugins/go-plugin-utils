@@ -37,9 +37,8 @@ func main() {
 	utils.Assert(err)
 
 	exists, err := client.IndexExists("malice").Do()
-	if err != nil {
-		// Handle error
-	}
+	utils.Assert(err)
+
 	if !exists {
 		// Index does not exist yet.
 		createIndex, err := client.CreateIndex("malice").BodyString(mapping).Do()
@@ -47,7 +46,11 @@ func main() {
 		if !createIndex.Acknowledged {
 			// Not acknowledged
 			log.Error("Couldn't create Index.")
+		} else {
+			log.Info("Created Index: ", "malice")
 		}
+	} else {
+		log.Info("Index malice already exists.")
 	}
 
 	// sample, err := client.Get().
@@ -70,7 +73,7 @@ func main() {
 		// "id":      sample.SHA256,
 		"file":      "file",
 		"plugins":   "plugins",
-		"scan_date": time.Now().Format("2006-01-02T15:04:05.999"),
+		"scan_date": time.Now().Format(time.RFC3339Nano),
 	}
 	jsonString, err := json.Marshal(scan)
 	utils.Assert(err)
@@ -82,16 +85,16 @@ func main() {
 		Type("samples").
 		OpType("create").
 		// Id("1").
-		BodyString(string(jsonString)).
+		BodyJson(scan).
 		Do()
 	utils.Assert(err)
 	log.Infof("Indexed sample %s to index %s, type %s\n", newSample.Id, newSample.Index, newSample.Type)
 
-	update, err := client.Update().Index("malice").Type("samples").Id("AVdfQ7Ufx2vUEcJdYX65").
+	update, err := client.Update().Index("malice").Type("samples").Id(newSample.Id).
 		Doc(map[string]interface{}{"plugins": "suck"}).
 		Do()
 	utils.Assert(err)
-	fmt.Printf("New version of sample %q is now %d", update.Id, update.Version)
+	fmt.Printf("New version of sample %q is now %d\n", update.Id, update.Version)
 
 	// }
 
