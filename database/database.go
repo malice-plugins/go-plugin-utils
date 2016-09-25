@@ -19,8 +19,8 @@ type PluginResults struct {
 	Data map[string]interface{}
 }
 
-// WriteToDatabase upserts plugin results into Database
-func WriteToDatabase(results map[string]interface{}) {
+// WritePluginResultsToDatabase upserts plugin results into Database
+func WritePluginResultsToDatabase(results map[string]interface{}) {
 
 	// connect to RethinkDB
 	session, err := r.Connect(r.ConnectOpts{

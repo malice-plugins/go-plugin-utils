@@ -9,22 +9,89 @@ import (
 	elastic "gopkg.in/olivere/elastic.v3"
 )
 
-var (
-	name     string
-	category string
-)
-
-// PluginResults plugin results
+// PluginResults a malice plugin results object
 type PluginResults struct {
-	ID   string `json:"id"`
-	Data map[string]interface{}
+	ID       string `json:"id"`
+	Name     string
+	Category string
+	Data     map[string]interface{}
 }
 
-// WriteToDatabase upserts plugin results into Database
-func WriteToDatabase(results PluginResults) {
+// ElasticAddr ElasticSearch address to user for connections
+var ElasticAddr string
+
+// InitElasticSearch initalizes ElasticSearch for use with malice
+func InitElasticSearch() error {
+
+	if ElasticAddr == "" {
+		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
+	}
+
+	client, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
+	utils.Assert(err)
+
+	exists, err := client.IndexExists("malice").Do()
+	utils.Assert(err)
+
+	if !exists {
+		// Index does not exist yet.
+		createIndex, err := client.CreateIndex("malice").BodyString(mapping).Do()
+		utils.Assert(err)
+		if !createIndex.Acknowledged {
+			// Not acknowledged
+			log.Error("Couldn't create Index.")
+		} else {
+			log.Info("Created Index: ", "malice")
+		}
+	} else {
+		log.Info("Index malice already exists.")
+	}
+
+	return err
+}
+
+// TestConnection tests the ElasticSearch connection
+func TestConnection(addr string) error {
+
+	if ElasticAddr == "" {
+		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
+	}
+
+	// connect to ElasticSearch where --link elastic was using via malice in Docker
+	log.Debugf("Attempting to connect to: %s", ElasticAddr)
+	_, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
+
+	// Ping the Elasticsearch server to get e.g. the version number
+	// info, code, err := client.Ping(ElasticAddr).Do()
+	// utils.Assert(err)
+	// fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
+
+	if err != nil {
+		// connect to ElasticSearch via malice in Docker
+		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", addr))
+		log.Debugf("Attempting to connect to: %s", ElasticAddr)
+		_, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
+
+		if err != nil {
+			// connect to ElasticSearch using Docker for Mac
+			ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "localhost"))
+			log.Debugf("Attempting to connect to: %s", ElasticAddr)
+			_, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
+			return err
+		}
+		return err
+	}
+	return err
+}
+
+// WritePluginResultsToDatabase upserts plugin results into Database
+func WritePluginResultsToDatabase(results PluginResults) {
 
 	// scanID := utils.Getopt("MALICE_SCANID", "")
-	ElasticAddr := fmt.Sprintf("%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
+	if ElasticAddr == "" {
+		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
+	}
+
 	client, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
 	utils.Assert(err)
 
@@ -40,13 +107,13 @@ func WriteToDatabase(results PluginResults) {
 
 	}
 
-	if getSample.Found {
+	if getSample != nil && getSample.Found {
 		fmt.Printf("Got document %s in version %d from index %s, type %s\n", getSample.Id, getSample.Version, getSample.Index, getSample.Type)
 		updateScan := map[string]interface{}{
 			"scan_date": time.Now().Format(time.RFC3339Nano),
 			"plugins": map[string]interface{}{
-				category: map[string]interface{}{
-					name: results.Data,
+				results.Category: map[string]interface{}{
+					results.Name: results.Data,
 				},
 			},
 		}
@@ -64,8 +131,8 @@ func WriteToDatabase(results PluginResults) {
 			// "id":      sample.SHA256,
 			// "file":      sample,
 			"plugins": map[string]interface{}{
-				category: map[string]interface{}{
-					name: results.Data,
+				results.Category: map[string]interface{}{
+					results.Name: results.Data,
 				},
 			},
 			"scan_date": time.Now().Format(time.RFC3339Nano),
