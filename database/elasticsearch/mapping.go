@@ -1,4 +1,4 @@
-package database
+package elasticsearch
 
 const mapping = `{
   "settings": {

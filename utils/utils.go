@@ -2,11 +2,13 @@ package utils
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 
 	"github.com/parnurzeal/gorequest"
 )
@@ -74,4 +76,25 @@ func RemoveDuplicates(elements []string) []string {
 	}
 	// Return the new slice.
 	return result
+}
+
+// GetHashType returns the hash type (md5, sha1, sha256, sha512)
+func GetHashType(hash string) (string, error) {
+	var validMD5 = regexp.MustCompile(`^[a-fA-F\d]{32}$`)
+	var validSHA1 = regexp.MustCompile(`^[a-fA-F\d]{40}$`)
+	var validSHA256 = regexp.MustCompile(`^[a-fA-F\d]{64}$`)
+	var validSHA512 = regexp.MustCompile(`^[a-fA-F\d]{128}$`)
+
+	switch {
+	case validMD5.MatchString(hash):
+		return "md5", nil
+	case validSHA1.MatchString(hash):
+		return "sha1", nil
+	case validSHA256.MatchString(hash):
+		return "sha256", nil
+	case validSHA512.MatchString(hash):
+		return "sha512", nil
+	default:
+		return "", errors.New("This is not a valid hash.")
+	}
 }
