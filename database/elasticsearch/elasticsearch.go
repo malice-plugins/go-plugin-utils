@@ -42,10 +42,10 @@ func InitElasticSearch() error {
 			// Not acknowledged
 			log.Error("Couldn't create Index.")
 		} else {
-			log.Info("Created Index: ", "malice")
+			log.Debug("Created Index: ", "malice")
 		}
 	} else {
-		log.Info("Index malice already exists.")
+		log.Debug("Index malice already exists.")
 	}
 
 	return err
@@ -101,10 +101,13 @@ func WritePluginResultsToDatabase(results PluginResults) {
 		Type("samples").
 		Id(results.ID).
 		Do()
+	if err != nil {
+		log.Debug(err)
+	}
 	// utils.Assert(err)
 
 	if getSample != nil && getSample.Found {
-		fmt.Printf("Got document %s in version %d from index %s, type %s\n", getSample.Id, getSample.Version, getSample.Index, getSample.Type)
+		log.Debugf("Got document %s in version %d from index %s, type %s\n", getSample.Id, getSample.Version, getSample.Index, getSample.Type)
 		updateScan := map[string]interface{}{
 			"scan_date": time.Now().Format(time.RFC3339Nano),
 			"plugins": map[string]interface{}{
