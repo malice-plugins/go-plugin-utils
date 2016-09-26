@@ -8,7 +8,7 @@ const mapping = `{
   "mappings": {
     "_default_": {
       "_all": {
-        "enabled": false
+        "enabled": true
       }
     },
     "samples": {
