@@ -8,26 +8,17 @@ package waitforit
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
-)
 
-// VERSION is definded during the build
-var VERSION string
-var debug *bool
+	log "github.com/Sirupsen/logrus"
+)
 
 const regexAddressConn string = `^([a-z]{3,}):\/\/([^:]+):?([0-9]+)?$`
 const regexPathAddressConn string = `^([^\/]+)(\/?.*)$`
-
-func logDebug(msg interface{}) {
-	if *debug {
-		log.Print(msg)
-	}
-}
 
 // Connection data
 type Connection struct {
@@ -81,19 +72,19 @@ func pingTCP(conn *Connection, timeoutSeconds int) error {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	start := time.Now()
 	address := fmt.Sprintf("%s:%d", conn.Host, conn.Port)
-	logDebug("Dial address: " + address)
+	log.Debug("Dial address: " + address)
 
 	for {
 		_, err := net.DialTimeout(conn.Type, address, time.Second)
-		logDebug("ping TCP")
+		log.Debug("ping TCP")
 
 		if err == nil {
-			logDebug("Up")
+			log.Debug("Up")
 			return nil
 		}
 
-		logDebug("Down")
-		logDebug(err)
+		log.Debug("Down")
+		log.Debug(err)
 		if time.Since(start) > timeout {
 			return err
 		}
@@ -106,13 +97,13 @@ func pingHTTP(conn *Connection, timeoutSeconds int) error {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	start := time.Now()
 	address := fmt.Sprintf("%s://%s:%d%s", conn.Scheme, conn.Host, conn.Port, conn.Path)
-	logDebug("HTTP address: " + address)
+	log.Debug("HTTP address: " + address)
 
 	for {
 		resp, err := http.Get(address)
 
 		if resp != nil {
-			logDebug("ping HTTP " + resp.Status)
+			log.Debug("ping HTTP " + resp.Status)
 		}
 
 		if err == nil && resp.StatusCode < http.StatusInternalServerError {
@@ -128,7 +119,7 @@ func pingHTTP(conn *Connection, timeoutSeconds int) error {
 }
 
 // WaitForIt waits for a service or URL to become online
-func WaitForIt(fullConn, host string, port, timeout int) {
+func WaitForIt(fullConn, host string, port, timeout int) error {
 	// fullConn := flag.String("full-connection", "", "full connection")
 	// host := flag.String("host", "", "host to connect")
 	// port := flag.Int("port", 80, "port to connect")
@@ -145,19 +136,21 @@ func WaitForIt(fullConn, host string, port, timeout int) {
 
 	conn := buildConn(host, port, fullConn)
 	if conn == nil {
-		log.Fatal("Invalid connection")
+		return errors.New("Invalid connection")
 	}
 
-	logDebug("Waiting " + strconv.Itoa(timeout) + " seconds")
+	log.Debug("Waiting " + strconv.Itoa(timeout) + " seconds")
 	if err := pingTCP(conn, timeout); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if conn.Scheme != "http" && conn.Scheme != "https" {
-		return
+		return nil
 	}
 
 	if err := pingHTTP(conn, timeout); err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	return nil
 }
