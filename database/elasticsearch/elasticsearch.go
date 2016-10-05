@@ -28,7 +28,9 @@ func InitElasticSearch() error {
 	}
 
 	client, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
-	utils.Assert(err)
+	if err != nil {
+		return err
+	}
 
 	exists, err := client.IndexExists("malice").Do()
 	utils.Assert(err)
@@ -86,7 +88,7 @@ func TestConnection(addr string) error {
 }
 
 // WritePluginResultsToDatabase upserts plugin results into Database
-func WritePluginResultsToDatabase(results PluginResults) {
+func WritePluginResultsToDatabase(results PluginResults) error {
 	// log.Info(results)
 	// scanID := utils.Getopt("MALICE_SCANID", "")
 	if ElasticAddr == "" {
@@ -94,7 +96,9 @@ func WritePluginResultsToDatabase(results PluginResults) {
 	}
 
 	client, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
-	utils.Assert(err)
+	if err != nil {
+		return err
+	}
 
 	getSample, err := client.Get().
 		Index("malice").
@@ -149,4 +153,5 @@ func WritePluginResultsToDatabase(results PluginResults) {
 		log.Debugf("Indexed sample %s to index %s, type %s\n", newScan.Id, newScan.Index, newScan.Type)
 		// return *newScan
 	}
+	return err
 }
