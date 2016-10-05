@@ -33,13 +33,17 @@ func InitElasticSearch() error {
 	}
 
 	exists, err := client.IndexExists("malice").Do()
-	utils.Assert(err)
+	if err != nil {
+		return err
+	}
 
 	if !exists {
 		// Index does not exist yet.
 		log.Debug("Mapping: ", mapping)
 		createIndex, err := client.CreateIndex("malice").BodyString(mapping).Do()
-		utils.Assert(err)
+		if err != nil {
+			return err
+		}
 		if !createIndex.Acknowledged {
 			// Not acknowledged
 			log.Error("Couldn't create Index.")
@@ -123,7 +127,9 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 		update, err := client.Update().Index("malice").Type("samples").Id(getSample.Id).
 			Doc(updateScan).
 			Do()
-		utils.Assert(err)
+		if err != nil {
+			return err
+		}
 
 		log.Debugf("New version of sample %q is now %d\n", update.Id, update.Version)
 		// return *update
@@ -148,7 +154,9 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 			// Id("1").
 			BodyJson(scan).
 			Do()
-		utils.Assert(err)
+		if err != nil {
+			return err
+		}
 
 		log.Debugf("Indexed sample %s to index %s, type %s\n", newScan.Id, newScan.Index, newScan.Type)
 		// return *newScan
