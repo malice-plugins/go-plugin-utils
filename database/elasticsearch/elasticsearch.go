@@ -1,9 +1,10 @@
 package elasticsearch
 
 import (
+	"context"
 	"fmt"
 	"time"
-	"context"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/maliceio/go-plugin-utils/utils"
 	elastic "gopkg.in/olivere/elastic.v5"
@@ -21,10 +22,14 @@ type PluginResults struct {
 var ElasticAddr string
 
 // InitElasticSearch initalizes ElasticSearch for use with malice
-func InitElasticSearch() error {
+func InitElasticSearch(elasticHost string) error {
 
 	if ElasticAddr == "" {
-		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
+		if elasticHost == "" {
+			ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
+		} else {
+			ElasticAddr = fmt.Sprintf("http://%s:9200", elasticHost)
+		}
 	}
 
 	client, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
