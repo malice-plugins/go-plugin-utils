@@ -74,9 +74,9 @@ func RunCommand(cmd string, timeout int, args ...string) (string, error) {
 	select {
 	case err := <-done:
 		// exited
-		if err != nil {
-			return "", err
-		}
+		// if err != nil {
+		// 	return "", err
+		// }
 		cmdOut, err := c.Output()
 		if err != nil {
 			return "", err
