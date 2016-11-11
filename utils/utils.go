@@ -71,72 +71,17 @@ func RunCommand(ctx context.Context, cmd string, args ...string) (string, error)
 		c = exec.Command(cmd, args...)
 	}
 
-	out, err := c.Output()
-
+	output, err := c.Output()
 	if err != nil {
-		return "", fmt.Errorf("Non-zero exit code: %s", err.Error())
+		return "", err
 	}
 
+	// check for exec context timeout
 	if ctx.Err() == context.DeadlineExceeded {
 		return "", fmt.Errorf("Command %s timed out.", cmd)
 	}
 
-	return string(out), nil
-	// stdout, err := c.StdoutPipe()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// if err := c.Start(); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// buf := make([]byte, 5)
-	// n, err := io.ReadFull(stdout, buf)
-
-	// waitErr := make(chan error, 1)
-	// go func() {
-	// 	waitErr <- c.Wait()
-	// }()
-	// cancel()
-	// select {
-	// case err := <-waitErr:
-	// 	if err == nil {
-	// 		log.Fatal("expected Wait failure")
-	// 	}
-	// case <-time.After(3 * time.Second):
-	// 	log.Fatal("timeout waiting for child process death")
-	// }
-	// c := exec.Command(cmd, args...)
-	// stdout, err := c.StdoutPipe()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// if err := c.Start(); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// // Wait for command or timeout
-	// done := make(chan error)
-	// go func() { done <- c.Wait() }()
-	// select {
-	// case err := <-done:
-	// 	// exited
-	// 	if err != nil {
-	// 		return "", err
-	// 	}
-	// 	var output []byte
-	// 	_, err = stdout.Read(output)
-	// 	if len(output) == 0 {
-	// 		return "", fmt.Errorf("Command had no output.")
-	// 	}
-
-	// 	return string(output), nil
-
-	// case <-time.After(time.Duration(timeout) * time.Second):
-	// 	// timed out
-	// 	c.Process.Kill()
-	// 	return "", fmt.Errorf("Command %s timed out.", cmd)
-	// }
+	return string(output), nil
 }
 
 func printStatus(resp gorequest.Response, body string, errs []error) {
