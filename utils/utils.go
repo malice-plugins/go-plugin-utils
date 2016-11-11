@@ -74,13 +74,13 @@ func RunCommand(cmd string, timeout int, args ...string) (string, error) {
 	select {
 	case err := <-done:
 		// exited
-		// if err != nil {
-		// 	return "", err
-		// }
-		cmdOut, err := c.Output()
 		if err != nil {
 			return "", err
 		}
+		cmdOut, err := c.Output()
+		// if err != nil {
+		// 	return "", err
+		// }
 
 		if len(cmdOut) == 0 {
 			return "", fmt.Errorf("Command had no output.")
