@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/parnurzeal/gorequest"
 )
@@ -60,14 +61,38 @@ func GetSHA256(name string) string {
 }
 
 // RunCommand runs cmd on file
-func RunCommand(cmd string, args ...string) string {
+func RunCommand(cmd string, timeout int, args ...string) (string, error) {
 
-	cmdOut, err := exec.Command(cmd, args...).Output()
-	if len(cmdOut) == 0 {
-		Assert(err)
+	c := exec.Command(cmd, args...)
+	if err := c.Start(); err != nil {
+		log.Fatal(err)
 	}
 
-	return string(cmdOut)
+	// Wait for command or timeout
+	done := make(chan error)
+	go func() { done <- c.Wait() }()
+	select {
+	case err := <-done:
+		// exited
+		if err != nil {
+			return "", err
+		}
+		cmdOut, err := c.Output()
+		if err != nil {
+			return "", err
+		}
+
+		if len(cmdOut) == 0 {
+			return "", fmt.Errorf("Command had no output.")
+		}
+
+		return string(cmdOut), nil
+
+	case <-time.After(time.Duration(timeout) * time.Second):
+		// timed out
+		c.Process.Kill()
+		return "", fmt.Errorf("Command %s timed out.", cmd)
+	}
 }
 
 func printStatus(resp gorequest.Response, body string, errs []error) {

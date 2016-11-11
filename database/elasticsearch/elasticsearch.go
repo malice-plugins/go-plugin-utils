@@ -3,10 +3,10 @@ package elasticsearch
 import (
 	"fmt"
 	"time"
-
+	"context"
 	log "github.com/Sirupsen/logrus"
 	"github.com/maliceio/go-plugin-utils/utils"
-	elastic "gopkg.in/olivere/elastic.v3"
+	elastic "gopkg.in/olivere/elastic.v5"
 )
 
 // PluginResults a malice plugin results object
@@ -32,7 +32,7 @@ func InitElasticSearch() error {
 		return err
 	}
 
-	exists, err := client.IndexExists("malice").Do()
+	exists, err := client.IndexExists("malice").Do(context.Background())
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func InitElasticSearch() error {
 	if !exists {
 		// Index does not exist yet.
 		log.Debug("Mapping: ", mapping)
-		createIndex, err := client.CreateIndex("malice").BodyString(mapping).Do()
+		createIndex, err := client.CreateIndex("malice").BodyString(mapping).Do(context.Background())
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 		Index("malice").
 		Type("samples").
 		Id(results.ID).
-		Do()
+		Do(context.Background())
 	if err != nil {
 		log.Debug(err)
 	}
@@ -126,7 +126,7 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 		}
 		update, err := client.Update().Index("malice").Type("samples").Id(getSample.Id).
 			Doc(updateScan).
-			Do()
+			Do(context.Background())
 		if err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 			OpType("create").
 			// Id("1").
 			BodyJson(scan).
-			Do()
+			Do(context.Background())
 		if err != nil {
 			return err
 		}
