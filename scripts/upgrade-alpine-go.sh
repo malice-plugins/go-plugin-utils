@@ -23,6 +23,3 @@ cd /usr/local/go/src
 patch -p2 -i /no-pic.patch
 ./make.bash
 rm -rf /*.patch
-
-export GOPATH=/go
-export PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
