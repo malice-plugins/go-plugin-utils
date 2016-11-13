@@ -16,6 +16,7 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
+// AppHelpTemplate is a default malice plugin help template
 var AppHelpTemplate = `Usage: {{.Name}} {{if .Flags}}[OPTIONS] {{end}}COMMAND [arg...]
 
 {{.Usage}}
@@ -146,6 +147,25 @@ func GetHashType(hash string) (string, error) {
 	default:
 		return "", errors.New("This is not a valid hash.")
 	}
+}
+
+// AskForConfirmation prompts user for yes/no response
+func AskForConfirmation() bool {
+	var response string
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		log.Fatal(err)
+	}
+	okayResponses := []string{"y", "yes"}
+	nokayResponses := []string{"n", "no"}
+	if StringInSlice(strings.ToLower(response), okayResponses) {
+		return true
+	}
+	if StringInSlice(strings.ToLower(response), nokayResponses) {
+		return false
+	}
+	fmt.Println("Please type yes or no and then press enter:")
+	return AskForConfirmation()
 }
 
 // SliceContainsString returns if slice contains substring
