@@ -90,10 +90,10 @@ func RunCommand(ctx context.Context, cmd string, args ...string) (string, error)
 		c = exec.Command(cmd, args...)
 	}
 
-	output, err := c.Output()
-	if err != nil {
-		return "", err
-	}
+	output, _ := c.Output()
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	// check for exec context timeout
 	if ctx.Err() == context.DeadlineExceeded {
