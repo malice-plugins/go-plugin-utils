@@ -1,15 +1,18 @@
 package utils
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -166,6 +169,42 @@ func AskForConfirmation() bool {
 	}
 	fmt.Println("Please type yes or no and then press enter:")
 	return AskForConfirmation()
+}
+
+// Unzip unzips archive to target location
+func Unzip(archive, target string) error {
+
+	// fmt.Println("Unzip archive ", target)
+
+	reader, err := zip.OpenReader(archive)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range reader.File {
+		filePath := filepath.Join(target, file.Name)
+
+		if file.FileInfo().IsDir() {
+			os.MkdirAll(filePath, file.Mode())
+			continue
+		}
+		fileReader, err := file.Open()
+		if err != nil {
+			return err
+		}
+		defer fileReader.Close()
+
+		targetFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+		if err != nil {
+			return err
+		}
+		defer targetFile.Close()
+
+		if _, err := io.Copy(targetFile, fileReader); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SliceContainsString returns if slice contains substring
