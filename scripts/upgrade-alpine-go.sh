@@ -2,9 +2,9 @@
 
 set -e
 
-GOLANG_VERSION=1.7.4
+GOLANG_VERSION=1.7.5
 GOLANG_SRC_URL=https://golang.org/dl/go$GOLANG_VERSION.src.tar.gz
-GOLANG_SRC_SHA256=4c189111e9ba651a2bb3ee868aa881fab36b2f2da3409e80885ca758a6b614cc
+GOLANG_SRC_SHA256=4e834513a2079f8cbbd357502cccaac9507fd00a1efe672375798858ff291815
 PATCH_URL=https://raw.githubusercontent.com/maliceio/go-plugin-utils/master/scripts/no-pic.patch
 
 echo "Upgrade to Golang $GOLANG_VERSION..."
