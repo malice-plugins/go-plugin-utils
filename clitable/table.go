@@ -143,13 +143,15 @@ func (t *Table) Print() {
 }
 
 // String - Ouput table as a string.
-func (t *Table) String() string {
+func (t *Table) String(title string) string {
 
 	tableString := []string{}
 
 	if len(t.Rows) == 0 && t.Footer == nil {
 		return ""
 	}
+
+	tableString = append(tableString, "### "+title)
 
 	t.calculateSizes(t.Footer)
 
