@@ -26,7 +26,7 @@ func InitElasticSearch(elasticHost string) error {
 
 	if ElasticAddr == "" {
 		if elasticHost == "" {
-			ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
+			ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elasticsearch"))
 		} else {
 			ElasticAddr = fmt.Sprintf("http://%s:9200", elasticHost)
 		}
@@ -66,7 +66,7 @@ func InitElasticSearch(elasticHost string) error {
 func TestConnection(addr string) error {
 
 	if ElasticAddr == "" {
-		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
+		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elasticsearch"))
 	}
 
 	// connect to ElasticSearch where --link elastic was using via malice in Docker
@@ -101,7 +101,7 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 	// log.Info(results)
 	// scanID := utils.Getopt("MALICE_SCANID", "")
 	if ElasticAddr == "" {
-		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elastic"))
+		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elasticsearch"))
 	}
 
 	client, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
