@@ -22,33 +22,24 @@ type PluginResults struct {
 var ElasticAddr string
 
 // InitElasticSearch initalizes ElasticSearch for use with malice
-func InitElasticSearch(elasticHost string) error {
+func InitElasticSearch(addr string) error {
 
-	if ElasticAddr == "" {
-		if elasticHost == "" {
-			ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elasticsearch"))
-		} else {
-			ElasticAddr = fmt.Sprintf("http://%s:9200", elasticHost)
-		}
-	}
+	// Test connection to ElasticSearch
+	_, err := TestConnection(addr)
+	utils.Assert(err)
 
-	client, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
-	if err != nil {
-		return err
-	}
+	client, err := elastic.NewSimpleClient(
+		elastic.SetURL(ElasticAddr),
+	)
+	utils.Assert(err)
 
 	exists, err := client.IndexExists("malice").Do(context.Background())
-	if err != nil {
-		return err
-	}
+	utils.Assert(err)
 
 	if !exists {
 		// Index does not exist yet.
-		log.Debug("Mapping: ", mapping)
 		createIndex, err := client.CreateIndex("malice").BodyString(mapping).Do(context.Background())
-		if err != nil {
-			return err
-		}
+		utils.Assert(err)
 		if !createIndex.Acknowledged {
 			// Not acknowledged
 			log.Error("Couldn't create Index.")
@@ -63,37 +54,44 @@ func InitElasticSearch(elasticHost string) error {
 }
 
 // TestConnection tests the ElasticSearch connection
-func TestConnection(addr string) error {
+func TestConnection(addr string) (bool, error) {
+
+	var err error
 
 	if ElasticAddr == "" {
-		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elasticsearch"))
+		if addr == "" {
+			ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elasticsearch"))
+		} else {
+			ElasticAddr = addr
+		}
 	}
 
 	// connect to ElasticSearch where --link elastic was using via malice in Docker
-	log.Debugf("Attempting to connect to: %s", ElasticAddr)
-	_, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
+	client, err := elastic.NewSimpleClient(
+		elastic.SetURL(ElasticAddr),
+	)
+	if err != nil {
+		return false, err
+	}
 
 	// Ping the Elasticsearch server to get e.g. the version number
-	// info, code, err := client.Ping(ElasticAddr).Do()
-	// utils.Assert(err)
-	// fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
-
+	log.Debugf("Attempting to PING to: %s", ElasticAddr)
+	info, code, err := client.Ping(ElasticAddr).Do(context.Background())
 	if err != nil {
-		// connect to ElasticSearch via malice in Docker
-		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", addr))
-		log.Debugf("Attempting to connect to: %s", ElasticAddr)
-		_, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
-
-		if err != nil {
-			// connect to ElasticSearch using Docker for Mac
-			ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "localhost"))
-			log.Debugf("Attempting to connect to: %s", ElasticAddr)
-			_, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
-			return err
-		}
-		return err
+		return false, err
 	}
-	return err
+
+	log.WithFields(log.Fields{
+		"code":    code,
+		"cluster": info.ClusterName,
+		"version": info.Version.Number,
+		"address": ElasticAddr,
+	}).Debug("ElasticSearch connection successful.")
+
+	if code == 200 {
+		return true, err
+	}
+	return false, err
 }
 
 // WritePluginResultsToDatabase upserts plugin results into Database
@@ -102,6 +100,7 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 	// scanID := utils.Getopt("MALICE_SCANID", "")
 	if ElasticAddr == "" {
 		ElasticAddr = fmt.Sprintf("http://%s:9200", utils.Getopt("MALICE_ELASTICSEARCH", "elasticsearch"))
+		log.Debug("Using elasticsearch address: ", ElasticAddr)
 	}
 
 	client, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
@@ -115,7 +114,11 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 		Id(results.ID).
 		Do(context.Background())
 	if err != nil {
-		log.Debug(err)
+		log.WithFields(log.Fields{
+			"id":    results.ID,
+			"index": "malice",
+			"type":  "samples",
+		}).Debug("Trying to find document and got error: ", err)
 	}
 	// utils.Assert(err)
 
@@ -138,9 +141,8 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 
 		log.Debugf("New version of sample %q is now %d\n", update.Id, update.Version)
 		// return *update
-
 	} else {
-
+		// ID not found so create new document with `index` command
 		scan := map[string]interface{}{
 			// "id":      sample.SHA256,
 			// "file":      sample,
@@ -155,7 +157,7 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 		newScan, err := client.Index().
 			Index("malice").
 			Type("samples").
-			OpType("create").
+			OpType("index").
 			// Id("1").
 			BodyJson(scan).
 			Do(context.Background())
@@ -163,8 +165,12 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 			return err
 		}
 
-		log.Debugf("Indexed sample %s to index %s, type %s\n", newScan.Id, newScan.Index, newScan.Type)
-		// return *newScan
+		log.WithFields(log.Fields{
+			"id":    newScan.Id,
+			"index": newScan.Index,
+			"type":  newScan.Type,
+		}).Debug("Indexed sample.")
 	}
+
 	return err
 }
