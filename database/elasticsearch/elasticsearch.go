@@ -26,20 +26,39 @@ func InitElasticSearch(addr string) error {
 
 	// Test connection to ElasticSearch
 	_, err := TestConnection(addr)
-	utils.Assert(err)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"func": "InitElasticSearch.TestConnection",
+		}).Debug(err)
+		return err
+	}
 
 	client, err := elastic.NewSimpleClient(
 		elastic.SetURL(ElasticAddr),
 	)
-	utils.Assert(err)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"func": "InitElasticSearch.NewSimpleClient",
+		}).Debug(err)
+		return err
+	}
 
 	exists, err := client.IndexExists("malice").Do(context.Background())
-	utils.Assert(err)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"func": "InitElasticSearch.IndexExists",
+		}).Debug(err)
+	}
 
 	if !exists {
 		// Index does not exist yet.
 		createIndex, err := client.CreateIndex("malice").BodyString(mapping).Do(context.Background())
-		utils.Assert(err)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"func": "InitElasticSearch.CreateIndex",
+			}).Debug(err)
+			return err
+		}
 		if !createIndex.Acknowledged {
 			// Not acknowledged
 			log.Error("Couldn't create Index.")
@@ -105,6 +124,9 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 
 	client, err := elastic.NewSimpleClient(elastic.SetURL(ElasticAddr))
 	if err != nil {
+		log.WithFields(log.Fields{
+			"func": "WritePluginResultsToDatabase.NewSimpleClient",
+		}).Debug(err)
 		return err
 	}
 
@@ -136,6 +158,9 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 			Doc(updateScan).
 			Do(context.Background())
 		if err != nil {
+			log.WithFields(log.Fields{
+				"func": "WritePluginResultsToDatabase.Update",
+			}).Debug(err)
 			return err
 		}
 
@@ -162,6 +187,9 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 			BodyJson(scan).
 			Do(context.Background())
 		if err != nil {
+			log.WithFields(log.Fields{
+				"func": "WritePluginResultsToDatabase.Index",
+			}).Debug(err)
 			return err
 		}
 
