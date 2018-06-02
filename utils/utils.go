@@ -182,6 +182,7 @@ func Unzip(archive, target string) error {
 	if err != nil {
 		return err
 	}
+	defer reader.Close()
 
 	for _, file := range reader.File {
 		filePath := filepath.Join(target, file.Name)
