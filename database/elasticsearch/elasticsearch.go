@@ -111,6 +111,9 @@ func (db *Database) Init() error {
 // TestConnection tests the ElasticSearch connection
 func (db *Database) TestConnection() error {
 
+	// Create URL from host/port
+	db.getURL()
+
 	// connect to ElasticSearch where --link elasticsearch was using via malice in Docker
 	client, err := elastic.NewSimpleClient(
 		elastic.SetURL(db.URL),
