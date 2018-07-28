@@ -9,7 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/malice-plugins/go-plugin-utils/database"
-	"github.com/maliceio/go-plugin-utils/utils"
+	"github.com/malice-plugins/go-plugin-utils/utils"
 	"github.com/olivere/elastic"
 	"github.com/pkg/errors"
 )
