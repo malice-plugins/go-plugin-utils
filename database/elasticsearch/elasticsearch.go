@@ -7,7 +7,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/maliceio/go-plugin-utils/utils"
-	elastic "gopkg.in/olivere/elastic.v5"
+	"github.com/maliceio/malice/malice/database"
+	"github.com/olivere/elastic"
 )
 
 // PluginResults a malice plugin results object
@@ -201,4 +202,89 @@ func WritePluginResultsToDatabase(results PluginResults) error {
 	}
 
 	return err
+}
+
+// WriteFileToDatabase inserts sample into Database
+func WriteFileToDatabase(sample map[string]interface{}) elastic.IndexResponse {
+
+	// Test connection to ElasticSearch
+	_, err := TestConnection("")
+	utils.Assert(err)
+
+	// file, err := os.OpenFile(path.Join(maldirs.GetLogsDir(), "elastic.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0664)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	client, err := elastic.NewSimpleClient(
+		elastic.SetURL(ElasticAddr),
+		// elastic.SetErrorLog(log.New(file, "ERROR ", log.LstdFlags)),
+	)
+	utils.Assert(err)
+
+	scan := map[string]interface{}{
+		// "id":      sample.SHA256,
+		"file":      sample,
+		"plugins":   database.GetPluginsByCategory(),
+		"scan_date": time.Now().Format(time.RFC3339Nano),
+	}
+
+	newScan, err := client.Index().
+		Index("malice").
+		Type("samples").
+		OpType("index").
+		// Id("1").
+		BodyJson(scan).
+		Do(context.Background())
+	utils.Assert(err)
+
+	log.WithFields(log.Fields{
+		"id":    newScan.Id,
+		"index": newScan.Index,
+		"type":  newScan.Type,
+	}).Debug("Indexed sample.")
+
+	return *newScan
+}
+
+// WriteHashToDatabase inserts sample into Database
+func WriteHashToDatabase(hash string) elastic.IndexResponse {
+
+	hashType, err := utils.GetHashType(hash)
+	utils.Assert(err)
+
+	// file, err := os.OpenFile(path.Join(maldirs.GetLogsDir(), "elastic.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0664)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	client, err := elastic.NewSimpleClient(
+		elastic.SetURL(ElasticAddr),
+		// elastic.SetErrorLog(log.New(file, "ERROR ", log.LstdFlags)),
+	)
+	utils.Assert(err)
+
+	scan := map[string]interface{}{
+		// "id":      sample.SHA256,
+		"file": map[string]interface{}{
+			hashType: hash,
+		},
+		"plugins":   database.GetPluginsByCategory(),
+		"scan_date": time.Now().Format(time.RFC3339Nano),
+	}
+
+	newScan, err := client.Index().
+		Index("malice").
+		Type("samples").
+		OpType("create").
+		// Id("1").
+		BodyJson(scan).
+		Do(context.Background())
+	utils.Assert(err)
+
+	log.WithFields(log.Fields{
+		"id":    newScan.Id,
+		"index": newScan.Index,
+		"type":  newScan.Type,
+	}).Debug("Indexed sample.")
+
+	return *newScan
 }
