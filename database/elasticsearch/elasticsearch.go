@@ -139,6 +139,10 @@ func (db *Database) TestConnection() error {
 // StoreFileInfo inserts initial sample info into database creating a placeholder for it
 func (db *Database) StoreFileInfo(sample map[string]interface{}) error {
 
+	if len(db.Plugins) == 0 {
+		return errors.New("Database.Plugins is empty (you must set this field to use this function)")
+	}
+
 	// Test connection to ElasticSearch
 	err := db.TestConnection()
 	if err != nil {
@@ -182,6 +186,10 @@ func (db *Database) StoreFileInfo(sample map[string]interface{}) error {
 
 // StoreHash stores a hash into the database that has been queried via intel-plugins
 func (db *Database) StoreHash(hash string) error {
+
+	if len(db.Plugins) == 0 {
+		return errors.New("Database.Plugins is empty (you must set this field to use this function)")
+	}
 
 	hashType, err := utils.GetHashType(hash)
 	if err != nil {
