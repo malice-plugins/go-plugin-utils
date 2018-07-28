@@ -7,7 +7,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/maliceio/go-plugin-utils/utils"
-	"github.com/maliceio/malice/malice/database"
 	"github.com/olivere/elastic"
 )
 
@@ -227,7 +226,7 @@ func WriteFileToDatabase(sample map[string]interface{}) elastic.IndexResponse {
 	scan := map[string]interface{}{
 		// "id":      sample.SHA256,
 		"file":      sample,
-		"plugins":   database.GetPluginsByCategory(),
+		"plugins":   MalicePlugins,
 		"scan_date": time.Now().Format(time.RFC3339Nano),
 	}
 
