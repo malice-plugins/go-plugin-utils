@@ -151,7 +151,7 @@ func (db *Database) WaitForConnection(ctx context.Context, timeout int) error {
 		// Try to connect to Elasticsearch
 		select {
 		case <-connCtx.Done():
-			return errors.Wrapf(err, "connecting to elasticsearch timed out after %s seconds", secondsWaited)
+			return errors.Wrapf(err, "connecting to elasticsearch timed out after %d seconds", secondsWaited)
 		default:
 			err = db.TestConnection()
 			if err == nil {
@@ -160,6 +160,7 @@ func (db *Database) WaitForConnection(ctx context.Context, timeout int) error {
 			}
 			// not ready yet
 			secondsWaited++
+			log.Debug(" * could not connect to elasticsearch (sleeping for 1 second)")
 			time.Sleep(1 * time.Second)
 		}
 	}
