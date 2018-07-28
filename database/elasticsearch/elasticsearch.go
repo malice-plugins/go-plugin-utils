@@ -166,23 +166,23 @@ func (db *Database) WaitForConnection(ctx context.Context, timeout int) error {
 }
 
 // StoreFileInfo inserts initial sample info into database creating a placeholder for it
-func (db *Database) StoreFileInfo(sample map[string]interface{}) error {
+func (db *Database) StoreFileInfo(sample map[string]interface{}) (elastic.IndexResponse, error) {
 
 	if len(db.Plugins) == 0 {
-		return errors.New("Database.Plugins is empty (you must set this field to use this function)")
+		return elastic.IndexResponse{}, errors.New("Database.Plugins is empty (you must set this field to use this function)")
 	}
 
 	// Test connection to ElasticSearch
 	err := db.TestConnection()
 	if err != nil {
-		return errors.Wrap(err, "failed to connect to database")
+		return elastic.IndexResponse{}, errors.Wrap(err, "failed to connect to database")
 	}
 
 	client, err := elastic.NewSimpleClient(
 		elastic.SetURL(db.URL),
 	)
 	if err != nil {
-		return errors.Wrap(err, "failed to create elasticsearch simple client")
+		return elastic.IndexResponse{}, errors.Wrap(err, "failed to create elasticsearch simple client")
 	}
 
 	// NOTE: I am not setting ID because I want to be able to re-scan files with updated signatures in the future
@@ -201,7 +201,7 @@ func (db *Database) StoreFileInfo(sample map[string]interface{}) error {
 		BodyJson(fInfo).
 		Do(context.Background())
 	if err != nil {
-		return errors.Wrap(err, "failed to index file info")
+		return elastic.IndexResponse{}, errors.Wrap(err, "failed to index file info")
 	}
 
 	log.WithFields(log.Fields{
@@ -210,7 +210,7 @@ func (db *Database) StoreFileInfo(sample map[string]interface{}) error {
 		"type":  newScan.Type,
 	}).Debug("indexed sample")
 
-	return nil
+	return *newScan, nil
 }
 
 // StoreHash stores a hash into the database that has been queried via intel-plugins
