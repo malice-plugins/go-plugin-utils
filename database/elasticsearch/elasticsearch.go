@@ -136,6 +136,35 @@ func (db *Database) TestConnection() error {
 	return nil
 }
 
+// WaitForConnection waits for connection to Elasticsearch to be ready
+func (db *Database) WaitForConnection(ctx context.Context, timeout int) error {
+
+	var err error
+
+	secondsWaited := 0
+
+	connCtx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+	defer cancel()
+
+	log.Debug("===> trying to connect to elasticsearch")
+	for {
+		// Try to connect to Elasticsearch
+		select {
+		case <-connCtx.Done():
+			return errors.Wrapf(err, "connecting to elasticsearch timed out after %s seconds", secondsWaited)
+		default:
+			err = db.TestConnection()
+			if err == nil {
+				log.Debugf("elasticsearch came online after %d seconds", secondsWaited)
+				return nil
+			}
+			// not ready yet
+			secondsWaited++
+			time.Sleep(1 * time.Second)
+		}
+	}
+}
+
 // StoreFileInfo inserts initial sample info into database creating a placeholder for it
 func (db *Database) StoreFileInfo(sample map[string]interface{}) error {
 
