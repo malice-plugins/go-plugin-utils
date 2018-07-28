@@ -22,6 +22,9 @@ type PluginResults struct {
 // ElasticAddr ElasticSearch address to user for connections
 var ElasticAddr string
 
+// MalicePlugins all the avaiable plugin placeholders
+var MalicePlugins map[string]interface{}
+
 // InitElasticSearch initalizes ElasticSearch for use with malice
 func InitElasticSearch(addr string) error {
 
@@ -267,7 +270,7 @@ func WriteHashToDatabase(hash string) elastic.IndexResponse {
 		"file": map[string]interface{}{
 			hashType: hash,
 		},
-		"plugins":   database.GetPluginsByCategory(),
+		"plugins":   MalicePlugins,
 		"scan_date": time.Now().Format(time.RFC3339Nano),
 	}
 
