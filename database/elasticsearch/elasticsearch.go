@@ -214,28 +214,28 @@ func (db *Database) StoreFileInfo(sample map[string]interface{}) (elastic.IndexR
 }
 
 // StoreHash stores a hash into the database that has been queried via intel-plugins
-func (db *Database) StoreHash(hash string) error {
+func (db *Database) StoreHash(hash string) (elastic.IndexResponse, error) {
 
 	if len(db.Plugins) == 0 {
-		return errors.New("Database.Plugins is empty (you must set this field to use this function)")
+		return elastic.IndexResponse{}, errors.New("Database.Plugins is empty (you must set this field to use this function)")
 	}
 
 	hashType, err := utils.GetHashType(hash)
 	if err != nil {
-		return errors.Wrapf(err, "unable to detect hash type: %s", hash)
+		return elastic.IndexResponse{}, errors.Wrapf(err, "unable to detect hash type: %s", hash)
 	}
 
 	// Test connection to ElasticSearch
 	err = db.TestConnection()
 	if err != nil {
-		return errors.Wrap(err, "failed to connect to database")
+		return elastic.IndexResponse{}, errors.Wrap(err, "failed to connect to database")
 	}
 
 	client, err := elastic.NewSimpleClient(
 		elastic.SetURL(db.URL),
 	)
 	if err != nil {
-		return errors.Wrap(err, "failed to create elasticsearch simple client")
+		return elastic.IndexResponse{}, errors.Wrap(err, "failed to create elasticsearch simple client")
 	}
 
 	scan := map[string]interface{}{
@@ -255,7 +255,7 @@ func (db *Database) StoreHash(hash string) error {
 		BodyJson(scan).
 		Do(context.Background())
 	if err != nil {
-		return errors.Wrapf(err, "unable to index hash: %s", hash)
+		return elastic.IndexResponse{}, errors.Wrapf(err, "unable to index hash: %s", hash)
 	}
 
 	log.WithFields(log.Fields{
@@ -264,7 +264,7 @@ func (db *Database) StoreHash(hash string) error {
 		"type":  newScan.Type,
 	}).Debug("indexed sample")
 
-	return nil
+	return *newScan, nil
 }
 
 // StorePluginResults stores a plugin's results in the database by updating
