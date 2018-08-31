@@ -22,8 +22,10 @@ lint:
 
 .PHONY: bump
 bump: ## Incriment version patch number
-	@echo " > Creating Release"
+	@echo " > Bumping VERSION"
 	@hack/bump/version -p $(shell cat VERSION) > VERSION
+	@git commit -am "bumping version to $(VERSION)"
+	@git push
 
 .PHONY: release
 release: bump ## Create a new release from the VERSION
