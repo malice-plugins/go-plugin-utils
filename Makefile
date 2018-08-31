@@ -27,7 +27,7 @@ release-patch: _release-patch git-release build upload current-version
 .PHONY: release
 release: ## Create a new release from the VERSION
 	@echo " > Creating Release"
-	@hack/bump/version ${shell cat VERSION} -p > VERSION
+	@hack/bump/version -p ${shell cat VERSION} > VERSION
 	@hack/make/release ${shell cat VERSION}
 
 .PHONY: re_release
